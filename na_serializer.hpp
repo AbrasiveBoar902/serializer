@@ -437,7 +437,22 @@ struct serialize_step_directcopy
     template<any_node... Ns>
     using append = serialize_step_directcopy<Nodes..., Ns...>;
 
-    constexpr static size_type length = 0;  //todo
+    struct length_helper
+    {
+        inline consteval auto length()
+        {
+            if constexpr (size == 1)
+            {
+                return payload_minimal_size<at<0>>;
+            }
+            else
+            {
+                return (payload_minimal_size<Nodes> + ...);
+            }
+        }
+    };
+
+    constexpr static size_type length = length_helper::length();  // todo: test
 };
 
 template<any_node... Nodes>
