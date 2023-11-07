@@ -1,4 +1,4 @@
-﻿#include "../fast_io/include/fast_io.h"
+﻿// #include "../fast_io/include/fast_io.h"
 #include "na_serializer.hpp"
 #include "na_serializer_nbt.hpp"
 
@@ -33,6 +33,6 @@ int main()
         outer_type value{};
         na::nbt::nbt_error errc{};
         auto ret{na::serializer::deserialize<na::nbt::nbt, na::nbt::option<std::endian::big>>(value, std::as_bytes(buf), errc)};
-        fast_io::io::println(fast_io::u8out(), fast_io::mnp::boolalpha(ret), " ", value.i8, " ", value.tt.i8, " ", value.tt.i64, " ", value.tt.i16, " ", value.tt.dbl, " ", value.t_string, " ", value.li2[0], " ", value.li2[1], " ", value.li2[2], " ", value.li2[3], " ", value.i64_8);
+        // fast_io::io::println(fast_io::u8out(), fast_io::mnp::boolalpha(ret), " ", value.i8, " ", value.tt.i8, " ", value.tt.i64, " ", value.tt.i16, " ", value.tt.dbl, " ", value.t_string, " ", value.li2[0], " ", value.li2[1], " ", value.li2[2], " ", value.li2[3], " ", value.i64_8);
     }
 }

@@ -1,6 +1,9 @@
 #include "na_serializer.hpp"
 #include "pfr_used.hpp"
 #include <bit>
+#include <concepts>
+#include <cstdint>
+#include <type_traits>
 
 namespace na::nbt {
 struct nbt
@@ -499,14 +502,16 @@ struct na::serializer::node<na::nbt::nbt, Option, Profile, Path>
         }
     }
 
-    using context = no_context;
+    // deserialize
 
-    inline constexpr static bool deserialize_prepend(auto& value, ::std::byte const* start, ::std::size_t& offset, ::std::size_t reversed, context& context, na::nbt::nbt_error& error_code)
+    using deserialize_context = no_context;
+
+    inline constexpr static bool deserialize_prepend(auto& value, ::std::byte const* start, ::std::size_t& offset, ::std::size_t reversed, deserialize_context& context, na::nbt::nbt_error& error_code)
     {
         return true;
     }
 
-    inline constexpr static bool deserialize_postpend(auto& value, ::std::byte const* start, ::std::size_t& offset, ::std::size_t reversed, context& context, na::nbt::nbt_error& error_code)
+    inline constexpr static bool deserialize_postpend(auto& value, ::std::byte const* start, ::std::size_t& offset, ::std::size_t reversed, deserialize_context& context, na::nbt::nbt_error& error_code)
     {
         return true;
     }
@@ -577,5 +582,116 @@ struct na::serializer::node<na::nbt::nbt, Option, Profile, Path>
             ref = ::std::u8string_view(reinterpret_cast<char8_t const*>(current_pos + sizeof(::std::uint16_t)), len);
         }
         return true;
+    }
+
+    // serialize
+
+    inline constexpr static size_type prepend_extra_size(auto& value)
+    {
+        return 0;
+    }
+
+    inline constexpr static size_type payload_extra_size(auto& value)
+    {
+        if constexpr (nbt::any_complex_nbt<type>)
+            return 0;  // not used
+        else if constexpr (payload_fixed_size)
+            return 0;
+        else if constexpr (::std::same_as<type, nbt::nbt_string>)
+        {
+            return payload_reference(value).size();
+        }
+        else
+        {
+            static_assert(nbt::any_nbt_list<type>);
+            // 仅可能为 list...<string>
+            auto get_list_extra_size{
+                [](auto& value, auto& self) -> size_type {
+                    using Type = ::std::remove_cvref_t<decltype(value)>;
+                    if constexpr (nbt::any_nbt_list<Type>)
+                    {
+                        size_type result{0};
+                        for (auto& e : value)
+                        {
+                            result += self(e, self);
+                        }
+                    }
+                    else
+                    {
+                        static_assert(::std::same_as<Type, nbt::nbt_string>);
+                        return value.size();
+                    }
+                }};
+            return get_list_extra_size(value, get_list_extra_size);
+        }
+    }
+
+    inline constexpr static size_type postpend_extra_size(auto& value)
+    {
+        return 0;
+    }
+
+    using serialize_context = no_context;
+
+    inline constexpr static void serialize_prepend(auto& value, ::std::byte const* start, serialize_context& context)
+    {
+        using Type = type;
+        if constexpr (Path::size == 0)
+        {
+            if constexpr (na::nbt::any_nbt_list<Type>)
+            {
+            }
+            // return 1 + 2 + 1 + 4;
+            else if constexpr (na::nbt::any_nbt_array<Type>)
+            {
+            }
+            // return 1 + 2 + 4;
+            else
+            {
+            }
+            // return 1 + 2;
+        }
+        else
+        {
+            using ParentType = node_parent<this_type>::type;
+            constexpr auto Index = path_last<Path>::index;
+            if constexpr (na::nbt::any_nbt_compound<ParentType>)
+            {
+                if constexpr (na::nbt::any_nbt_list<Type>)
+                {
+                }
+                // return static_cast<::std::size_t>(1) + 2 + boost::pfr::get_name<Index, ParentType>().size() + 1 + 4;
+                else if constexpr (na::nbt::any_nbt_array<Type>)
+                {
+                }
+                // return static_cast<::std::size_t>(1) + 2 + boost::pfr::get_name<Index, ParentType>().size() + 4;
+                else
+                {
+                }
+                // return static_cast<::std::size_t>(1) + 2 + boost::pfr::get_name<Index, ParentType>().size();
+            }
+            else  // list
+            {
+                static_assert(na::nbt::any_complex_nbt_list<ParentType>);
+                if constexpr (na::nbt::any_nbt_list<Type>)
+                {
+                }
+                // return 1 + 4;
+                else if constexpr (na::nbt::any_nbt_array<Type>)
+                {
+                }
+                // return 4;
+                else
+                {
+                }
+                // return 0;
+            }
+        }
+    }
+    inline constexpr static void serialize_postpend(auto& value, ::std::byte const* start, serialize_context& context)
+    {
+    }
+    inline constexpr static void serialize_all(auto& value, ::std::byte const* start)
+    {
     }
 };

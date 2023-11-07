@@ -5,6 +5,7 @@
 #include <span>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 namespace na::serializer {
 #ifdef __INTELLISENSE__
     #define NA_SERIALIZER_HIDE_IMPL
@@ -452,7 +453,7 @@ struct serialize_step_directcopy
         }
     };
 
-    constexpr static size_type length = length_helper::length();  // todo: test
+    constexpr static size_type length = length_helper::length();
 };
 
 template<any_node... Nodes>
@@ -684,7 +685,7 @@ struct generate_context_tuple_helper
     {
         if constexpr (This::step == serialize_steps::prepend)
         {
-            using Context = This::node::context;
+            using Context = This::node::deserialize_context;
             if constexpr (!::std::same_as<Context, no_context>)
                 return ::std::tuple<Context>{};
             else
@@ -706,7 +707,7 @@ struct generate_context_tuple_helper
     {
         if constexpr (This::step == serialize_steps::prepend)
         {
-            using Context = This::node::context;
+            using Context = This::node::deserialize_context;
             if constexpr (!::std::same_as<Context, no_context>)
                 return 1;
             else
@@ -752,7 +753,7 @@ inline constexpr bool deserialize_one(auto& value, ::std::byte const* start, ::s
     static_assert(This::step != serialize_steps::payload);
     if constexpr (This::step == serialize_steps::prepend)
     {
-        if constexpr (::std::same_as<typename This::node::context, no_context>)
+        if constexpr (::std::same_as<typename This::node::deserialize_context, no_context>)
         {
             no_context dummy{};
             return This::node::deserialize_prepend(value, start, offset, reversed, dummy, error_code);
@@ -764,7 +765,7 @@ inline constexpr bool deserialize_one(auto& value, ::std::byte const* start, ::s
     }
     else if constexpr (This::step == serialize_steps::postpend)
     {
-        if constexpr (::std::same_as<typename This::node::context, no_context>)
+        if constexpr (::std::same_as<typename This::node::deserialize_context, no_context>)
         {
             no_context dummy{};
             return This::node::deserialize_postpend(value, start, offset, reversed, dummy, error_code);
@@ -822,6 +823,11 @@ inline constexpr bool deserialize(auto& value, ::std::span<::std::byte const, E>
     {
         return true;
     }
+}
+
+template<typename... Types>
+struct memory_builder
+{
 }
 
 }  // namespace na::serializer
